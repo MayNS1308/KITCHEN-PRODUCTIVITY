@@ -175,6 +175,11 @@
     background:#f7f4e9; color:var(--ink); cursor:pointer;
   }
   .submit-btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .clear-btn{
+    display:block; margin:0 0 16px auto; background:transparent; border:none;
+    color:var(--muted); font-size:13px; text-decoration:underline; cursor:pointer;
+    font-family:'IBM Plex Mono',monospace; padding:4px 0;
+  }
   .msg{ font-size:15px; margin-top:9px; min-height:18px; font-weight:700; }
   .msg.ok{ color:#c7f5b8; }
   .msg.err{ color:#ffb8a3; }
@@ -242,6 +247,7 @@
       <div>
         <label>Person</label>
         <select id="persona"></select>
+        <input type="text" id="personaOtro" class="hidden" placeholder="Type your name" maxlength="40" autocomplete="off">
       </div>
       <div>
         <label>Date and time</label>
@@ -261,6 +267,7 @@
 
       <label id="comentarioLabel">Comment (optional)</label>
       <textarea id="comentario" rows="2" placeholder="E.g.: box opened, leftover from event..."></textarea>
+      <button type="button" class="clear-btn" id="clearComentarioBtn">Clear comment</button>
 
       <button class="submit-btn" id="submitBtn">SUBMIT</button>
       <div class="msg" id="msg"></div>
@@ -699,6 +706,7 @@ let currentMenuNum = null;
 let entries = [];
 
 const personaSel = document.getElementById('persona');
+const personaOtroInput = document.getElementById('personaOtro');
 const menuGrid = document.getElementById('menuGrid');
 const menuBody = document.getElementById('menuBody');
 const fechaHoraInput = document.getElementById('fechaHora');
@@ -719,6 +727,15 @@ setInterval(updateFechaHora, 30000);
 function renderPersonas(){
   personaSel.innerHTML = PERSONAS.map(p => `<option value="${p}">${p}</option>`).join('');
 }
+personaSel.addEventListener('change', ()=>{
+  if(personaSel.value === 'OTRO'){
+    personaOtroInput.classList.remove('hidden');
+    personaOtroInput.focus();
+  } else {
+    personaOtroInput.classList.add('hidden');
+    personaOtroInput.value = '';
+  }
+});
 
 function renderMenuGrid(){
   menuGrid.innerHTML = Object.keys(MENUS).map(k => {
@@ -1030,10 +1047,22 @@ async function saveEntries(){
   }
 }
 
+document.getElementById('clearComentarioBtn').addEventListener('click', ()=>{
+  document.getElementById('comentario').value = '';
+});
+
 document.getElementById('submitBtn').addEventListener('click', async ()=>{
   const menu = MENUS[currentMenuNum];
   if(!menu){ showMsg('This menu does not have any dishes loaded yet.', false); return; }
-  const persona = personaSel.value;
+  let persona = personaSel.value;
+  if(persona === 'OTRO'){
+    persona = personaOtroInput.value.trim().toUpperCase();
+    if(!persona){
+      showMsg('Type your name in the "Person" field before submitting.', false);
+      personaOtroInput.focus();
+      return;
+    }
+  }
   const comentario = document.getElementById('comentario').value.trim();
   const mealSections = [...menuBody.querySelectorAll('.meal-section')];
   const newEntries = [];
